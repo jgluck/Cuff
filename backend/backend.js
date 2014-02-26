@@ -1,81 +1,78 @@
-var http = require('http'); 
-var sio = require('socket.io');
-var fs = require('fs');
-var com = require("serialport");
+// import libraries
+var http = require("http");
+var socketio = require("socket.io");
+var fs = require("fs");
+var serialport = require("serialport");
 
-
-
-var logStream = fs.createWriteStream('backend.log',{ flags: 'a'});
-
-
-var log = function(message){
-    logStream.write(message);
+// prepare log
+var logStream = fs.createWriteStream("backend.log", {flags: "a"});
+var log = function(message) {
+  logStream.write(message + "\n");
+  console.log(message);
 }
 
-log('**** STARTING SERVER ****');
+// prepare server
+var serverPort = process.argv[3];
+var server = http.createServer(function(req, res) {
+  res.writeHead(200, {"Content-Type": "text/html"});
+}).listen(serverPort);
 
-var server = http.createServer(function(req, res){ 
-    res.writeHead(200, {'Content-Type': 'text/html'}); 
- 
- res.end('hi'); 
-});
+log("server port open  : " + serverPort);
 
+// prepare client(s)-server socket
+var websocket = socketio.listen(server);
+websocket.set("log level", 1);
 
-
-server.listen(8124);
-
-io = sio.listen(server);
-
-var bp = 0;
-
-var dx = 0;
-var dy = 0;
-var xz = 0;
-
-
-
-var portName = "/dev/tty.usbmodem1411"
-
-var serialPort = new com.SerialPort(portName, {
+// prepare arduino-server connection
+var arduinoPort = process.argv[2];
+var arduino = new serialport.SerialPort(arduinoPort, {
     baudrate: 9600,
-    parser: com.parsers.readline('\r\n')
-  });
-
-serialPort.on('open',function() {
-  log('Serial port open');
-  console.log('Port open');
+    parser: serialport.parsers.readline("\r\n")
 });
 
-
-
-serialPort.on('data', function(data) {
-  splitdat = data.split(/\t+/);
-  value = splitdat[2].split(': ')[0]
-  console.log(data);
-  if(splitdat[1]==="pulse"){
-    io.sockets.in('clients').emit('pulse',{pulse: splitdat[2]});
-  }else if(splitdat[1] === "dx"){
-    io.sockets.in('clients').emit('dx',{pin: splitdat[0], dx: value});
-  }else if(splitdat[1] === "dy"){
-    io.sockets.in('clients').emit('dy',{pin: splitdat[0], dy: value});
-  }else if(splitdat[1] === "dz"){
-    io.sockets.in('clients').emit('dz',{pin: splitdat[0], dz: value});
-  }
+arduino.on("open", function() {
+    log("arduino port open : " + arduinoPort);
 });
 
+arduino.on("data", function(data) {
+    log(data);
 
+    if (data) {
+        var pieces = data.split(/\t+/);
 
+        if (pieces.length === 3) {
+            var pin = pieces[0];
+            var type = pieces[1];
+            var value = pieces[2].split(": ")[0];
 
-io.sockets.on('connection', function (socket) {
-  log('Client joined: ' + socket);
-  socket.join('clients');
+            if (type === "pulse") {
+                websocket.sockets.in("clients").emit("pulse", {
+                    pin: pin,
+                    pulse: value
+                });
+            } else if (type === "dx") {
+                websocket.sockets.in("clients").emit("dx", {
+                    pin: pin,
+                    dx: value
+                });
+            } else if (type === "dy") {
+                websocket.sockets.in("clients").emit("dy", {
+                    pin: pin,
+                    dy: value
+                });
+            } else if (type === "dz") {
+                websocket.sockets.in("clients").emit("dz", {
+                    pin: pin,
+                    dz: value
+                });
+            } else {
+                log("bad line : " + data);
+            }
+        }
+    }
 });
 
-
-
-
-serialPort.on('close',function(){
-    console.log("Closed Port");
-  })
-
-
+websocket.sockets.on("connection", function(socket) {
+    log("client joined : " + socket);
+    socket.join("clients");
+});

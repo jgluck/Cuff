@@ -9,7 +9,7 @@ var logStream = fs.createWriteStream('backend.log',{ flags: 'a'});
 
 
 var log = function(message){
-    logStream.write(message);
+    logStream.write(message + "\n");
 }
 
 log('**** STARTING SERVER ****');
@@ -34,7 +34,9 @@ var xz = 0;
 
 
 
-var portName = "/dev/tty.usbmodem1411"
+// var portName = "/dev/tty.usbmodem1411"
+var portName = "/dev/tty.usbmodemfa131"
+
 
 var serialPort = new com.SerialPort(portName, {
     baudrate: 9600,
@@ -49,17 +51,25 @@ serialPort.on('open',function() {
 
 
 serialPort.on('data', function(data) {
-  splitdat = data.split(/\t+/);
-  value = splitdat[2].split(': ')[0]
+
   console.log(data);
-  if(splitdat[1]==="pulse"){
-    io.sockets.in('clients').emit('pulse',{pulse: splitdat[2]});
-  }else if(splitdat[1] === "dx"){
-    io.sockets.in('clients').emit('dx',{pin: splitdat[0], dx: value});
-  }else if(splitdat[1] === "dy"){
-    io.sockets.in('clients').emit('dy',{pin: splitdat[0], dy: value});
-  }else if(splitdat[1] === "dz"){
-    io.sockets.in('clients').emit('dz',{pin: splitdat[0], dz: value});
+  
+  if(data){
+    splitdat = data.split(/\t+/);
+    if(splitdat.length == 3){
+      value = splitdat[2].split(': ')[0]
+      if(splitdat[1]==="pulse"){
+        io.sockets.in('clients').emit('pulse',{pulse: splitdat[2]});
+      }else if(splitdat[1] === "dx"){
+        io.sockets.in('clients').emit('dx',{pin: splitdat[0], dx: value});
+      }else if(splitdat[1] === "dy"){
+        io.sockets.in('clients').emit('dy',{pin: splitdat[0], dy: value});
+      }else if(splitdat[1] === "dz"){
+        io.sockets.in('clients').emit('dz',{pin: splitdat[0], dz: value});
+      }
+    }else{
+      log("Bad Line: "+data);
+    }
   }
 });
 

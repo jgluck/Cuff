@@ -1,0 +1,19 @@
+[A0]    pulse   : 420
+[A1]    dx      : 138
+[A2]    dy      : 13
+[A3]    dz      : 95
+
+[A0]    pulse   : 857
+[A1]    dx      : 88
+[A2]    dy      : 94
+[A3]    dz      : 21
+
+.
+.
+.
+
+So, generally:
+
+[#]     name    value
+
+tab-delineated, with a newline between sets, if you care about complete rounds.

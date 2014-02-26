@@ -51,8 +51,8 @@ serialPort.on('open',function() {
 serialPort.on('data', function(data) {
   splitdat = data.split(/\t+/);
   value = splitdat[2].split(': ')[0]
+  console.log(data);
   if(splitdat[1]==="pulse"){
-
     io.sockets.in('clients').emit('pulse',{pulse: splitdat[2]});
   }else if(splitdat[1] === "dx"){
     io.sockets.in('clients').emit('dx',{pin: splitdat[0], dx: value});

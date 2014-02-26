@@ -34,8 +34,8 @@ var xz = 0;
 
 
 
-// var portName = "/dev/tty.usbmodem1411"
-var portName = "/dev/tty.usbmodemfa131"
+var portName = "/dev/tty.usbmodem1411"
+//var portName = "/dev/tty.usbmodemfa131"
 
 
 var serialPort = new com.SerialPort(portName, {

@@ -1,6 +1,6 @@
 // constants //////////////////////////////////////////////////////////////////
 #define BAUD_RATE       9600
-#define READ_DELAY      50
+#define READ_DELAY      100
 
 static const char A0_NAME[] = "A0";
 static const char A1_NAME[] = "A1";

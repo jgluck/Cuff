@@ -50,15 +50,16 @@ serialPort.on('open',function() {
 
 serialPort.on('data', function(data) {
   splitdat = data.split(/\t+/);
+  value = splitdat[2].split(': ')[0]
   if(splitdat[1]==="pulse"){
 
     io.sockets.in('clients').emit('pulse',{pulse: splitdat[2]});
   }else if(splitdat[1] === "dx"){
-    io.sockets.in('clients').emit('dx',{pin: splitdat[0], dx: splitdat[2]});
+    io.sockets.in('clients').emit('dx',{pin: splitdat[0], dx: value});
   }else if(splitdat[1] === "dy"){
-    io.sockets.in('clients').emit('dy',{pin: splitdat[0], dy: splitdat[2]});
+    io.sockets.in('clients').emit('dy',{pin: splitdat[0], dy: value});
   }else if(splitdat[1] === "dz"){
-    io.sockets.in('clients').emit('dz',{pin: splitdat[0], dz: splitdat[2]});
+    io.sockets.in('clients').emit('dz',{pin: splitdat[0], dz: value});
   }
 });
 

@@ -19,14 +19,9 @@ var server = http.createServer(function(req, res) {
 
 log("server port open  : " + serverPort);
 
-<<<<<<< HEAD
-var portName = "/dev/tty.usbmodem1411"
-//var portName = "/dev/tty.usbmodemfa131"
-=======
 // prepare client(s)-server socket
 var websocket = socketio.listen(server);
 websocket.set("log level", 1);
->>>>>>> 71d2988f147d3ee1cf03ca35ea7757362b9dadd3
 
 // prepare arduino-server connection
 var arduinoPort = process.argv[2];

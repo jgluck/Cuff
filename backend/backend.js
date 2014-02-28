@@ -13,6 +13,57 @@ var minPulse = null;
 var maxPulse = null;
 var inPulse = false; // currently above threshold
 
+var accelDataMaxLen = 50;
+
+var xData = [];
+var xDataAverage = null;
+
+var yData = [];
+var yDataAverage = null;
+
+var zData = [];
+var zDataAverage = null;
+
+
+var sumArray = function(arr){
+    total = 0;
+    for(i=0;i<arr.length;i++){
+        total+= arr[i];
+    }
+    return total;
+}
+
+var addDXToArray = function(analogValue){
+    if(xData.length < accelDataMaxLen){
+        xData.push(analogValue);
+    }else{
+        xData.shift();
+        xData.push(analogValue)
+    }
+    xDataAverage = sumArray(xData)/xData.length;
+}
+
+var addDYToArray = function(analogValue){
+    if(yData.length < accelDataMaxLen){
+        yData.push(analogValue);
+    }else{
+        yData.shift();
+        yData.push(analogValue)
+    }
+    yDataAverage = sumArray(yData)/yData.length;
+}
+
+var addDZToArray = function(analogValue){
+    if(zData.length < accelDataMaxLen){
+        zData.push(analogValue);
+    }else{
+        zData.shift();
+        zData.push(analogValue)
+    }
+    zDataAverage = sumArray(zData)/zData.length;
+}
+
+
 var addToPulseArray = function(analogValue){
     if(pulseData.length < pArrayMaxLen){
         pulseData.push(analogValue);
@@ -22,15 +73,15 @@ var addToPulseArray = function(analogValue){
     }
     minPulse = Math.min.apply(Math, pulseData);
     maxPulse = Math.max.apply(Math, pulseData);
-    log("Min: " + minPulse);
-    log("Max: " + maxPulse);
-    // log(pulseData);
 }
 
 var shouldSendPulse = function(analogValue){
     range = (maxPulse - minPulse) + 1.0
     curVal = (analogValue - minPulse) +1.0
     perThrough = curVal/range;
+    if(range < 20){
+        return false;
+    }
     // log("Range: "+range)
     // log("CurVal: "+curVal);
     // log("perThrough: "+perThrough)
@@ -98,19 +149,22 @@ arduino.on("data", function(data) {
                 }
 
             } else if (type === "dx") {
+                addDXToArray(parseInt(value));
                 websocket.sockets.in("clients").emit("dx", {
                     pin: pin,
-                    dx: value
+                    dx: (value - xDataAverage)
                 });
             } else if (type === "dy") {
+                addDYToArray(parseInt(value));
                 websocket.sockets.in("clients").emit("dy", {
                     pin: pin,
-                    dy: value
+                    dy: (value - yDataAverage)
                 });
             } else if (type === "dz") {
+                addDZToArray(parseInt(value));
                 websocket.sockets.in("clients").emit("dz", {
                     pin: pin,
-                    dz: value
+                    dz: (value - zDataAverage)
                 });
             } else {
                 log("bad line : " + data);

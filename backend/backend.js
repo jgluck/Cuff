@@ -4,6 +4,49 @@ var socketio = require("socket.io");
 var fs = require("fs");
 var serialport = require("serialport");
 
+
+var pulseData = [];
+var pArrayMaxLen = 250;
+var threshold = .75;
+var deadZone = .5;
+var minPulse = null;
+var maxPulse = null;
+var inPulse = false; // currently above threshold
+
+var addToPulseArray = function(analogValue){
+    if(pulseData.length < pArrayMaxLen){
+        pulseData.push(analogValue);
+    }else{
+        pulseData.shift();
+        pulseData.push(analogValue);
+    }
+    minPulse = Math.min.apply(Math, pulseData);
+    maxPulse = Math.max.apply(Math, pulseData);
+    log("Min: " + minPulse);
+    log("Max: " + maxPulse);
+    // log(pulseData);
+}
+
+var shouldSendPulse = function(analogValue){
+    range = (maxPulse - minPulse) + 1.0
+    curVal = (analogValue - minPulse) +1.0
+    perThrough = curVal/range;
+    // log("Range: "+range)
+    // log("CurVal: "+curVal);
+    // log("perThrough: "+perThrough)
+    if(inPulse){
+        if(perThrough<deadZone)
+            inPulse = false;
+        return false;
+    }else{
+        if(perThrough>threshold){
+            inPulse = true;
+            return true;
+        }
+    }
+}
+
+
 // prepare log
 var logStream = fs.createWriteStream("backend.log", {flags: "a"});
 var log = function(message) {
@@ -35,7 +78,7 @@ arduino.on("open", function() {
 });
 
 arduino.on("data", function(data) {
-    log(data);
+    // log(data);
 
     if (data) {
         var pieces = data.split(/\t+/);
@@ -43,13 +86,17 @@ arduino.on("data", function(data) {
         if (pieces.length === 3) {
             var pin = pieces[0];
             var type = pieces[1];
-            var value = pieces[2].split(": ")[0];
+            var value = pieces[2].split(": ")[1];
 
             if (type === "pulse") {
-                websocket.sockets.in("clients").emit("pulse", {
-                    pin: pin,
-                    pulse: value
-                });
+                addToPulseArray(parseInt(value));
+                if(shouldSendPulse(value)){
+                    websocket.sockets.in("clients").emit("pulse", {
+                        pin: pin,
+                        pulse: value
+                    });
+                }
+
             } else if (type === "dx") {
                 websocket.sockets.in("clients").emit("dx", {
                     pin: pin,
@@ -72,7 +119,10 @@ arduino.on("data", function(data) {
     }
 });
 
+
 websocket.sockets.on("connection", function(socket) {
     log("client joined : " + socket);
     socket.join("clients");
 });
+
+

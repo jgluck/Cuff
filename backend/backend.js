@@ -13,7 +13,7 @@ var minPulse = null;
 var maxPulse = null;
 var inPulse = false; // currently above threshold
 
-var accelDataMaxLen = 50;
+var accelDataMaxLen = 20;
 
 var xData = [];
 var xDataAverage = null;

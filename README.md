@@ -3,6 +3,11 @@
 
 Cuff is designed to be a passive input device for video games (and more generally, computer applications)
 
+## Authors
+
+* Tiffany Chao
+* Jonathan Gluck
+
 ## Code
 
 The code contained in this repo breaks down into two parts.
